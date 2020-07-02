@@ -1,0 +1,8 @@
+{
+    "encoder_hidden":{"_type":"choice","_value":[64, 128]},
+    "decoder_hidden":{"_type":"choice","_value":[64, 128]},
+    "embed_dim":{"_type":"choice","_value":[32, 64, 128]},
+    "dropout":{"_type":"choice","_value":[0, 0.5]},
+    "learning_rate":{"_type":"choice","_value":[1e-4, 1e-3, 1e-2]},
+    "regularization":{"_type":"choice","_value":[1e-4, 0]}
+}

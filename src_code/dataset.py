@@ -1,3 +1,5 @@
+from random import random
+
 import torch
 from torch.utils.data import Dataset
 
@@ -9,7 +11,9 @@ PAD = "</p>"
 
 
 class MTDataset(Dataset):
-    def __init__(self, source_file, target_file, fixed_mapping=None):
+    def __init__(self, source_file, target_file, fixed_mapping=None, unk=0.):
+        super(MTDataset, self).__init__()
+        self._unk = unk
         self._build_data(source_file, target_file, fixed_mapping)
 
     @property
@@ -66,13 +70,10 @@ class MTDataset(Dataset):
         else:
             label_to_idx, ascii_to_idx = fixed_mapping
         label_counts = {0: 1e-4, 1: 1e-4, 2: 1e-4, 3: 1e-4}
-        data, exists = [], set()
+        data = []
 
         # loop pairs of source and destination sentences
         for src_sent, trg_sent in zip(open(src, "rt"), open(target, "rt")):
-            if src_sent in exists:
-                continue
-            exists.add(src_sent)
 
             # collect new numbers/labels
             src_sent, trg_sent = src_sent.split(), trg_sent.split()
@@ -112,10 +113,21 @@ class MTDataset(Dataset):
             padded = [torch.Tensor([val] * (dim - len(b)) + b) for b in batch]
         return torch.stack(padded, dim=0).long()
 
+    def _add_unk(self, batch):
+        suorce_rand = self._ascii_to_idx[UNK]
+        target_rand = self._label_to_idx[UNK]
+        for source, target in batch:
+            for i in range(len(target)):
+                if random() < self._unk:
+                    source[i+1] = suorce_rand
+                    target[i] = target_rand
+        return batch
+
     def collate_fn(self, batch):
         lengths = [len(b[0]) for b in batch]
         max_len_source = max(len(b[0]) for b in batch)
         max_len_target = max(len(b[1]) for b in batch)
+        # batch = self._add_unk(batch)
         source_batch = MTDataset._pad([b[0] for b in batch], max_len_source, self._ascii_to_idx[PAD], side="left")
         target_batch = MTDataset._pad([b[1] for b in batch], max_len_target, self._label_to_idx[PAD], side="right")
         return source_batch, target_batch
@@ -129,13 +141,13 @@ class MTDataset(Dataset):
 
 def sanity_test():
     from torch.utils.data import DataLoader
-    ds = MTDataset("data/dev.src", "data/dev.trg")
-    ds2 = MTDataset("data/dev.src", "data/dev.trg", fixed_mapping=ds.mapping)
+    ds = MTDataset("../data/dev.src", "../data/dev.trg")
+    ds2 = MTDataset("../data/dev.src", "../data/dev.trg", fixed_mapping=ds.mapping, unk=0.15)
 
     dl = DataLoader(ds2,
                     num_workers=4,
-                    batch_size=64,
-                    collate_fn=ds.collate_fn)
+                    batch_size=1,
+                    collate_fn=ds2.collate_fn)
     for src_, dst_ in dl:
         # print(src_, lengths_, dst_)
         for s, t in zip(src_, dst_):

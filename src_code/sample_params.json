@@ -1,0 +1,11 @@
+{
+  "encoder": {"num_layers": 1, "hidden_dim": 128, "embed_dim": 128, "dropout": 0},
+  "decoder": {"num_layers": 1, "hidden_dim": 256, "embed_dim": 128, "dropout": 0},
+  "optimizer": {"type": "Adam", "kwargs": {"lr": 1e-2, "weight_decay": 0}},
+  "train": {"epochs": 100, "batch_size": 1},
+  "data": {
+    "train_source": "../data/train.src", "train_target": "../data/train.trg",
+    "dev_source": "../data/dev.src", "dev_target": "../data/dev.trg",
+    "test_source": "../data/test.src", "test_target": "../data/test.src"
+  }
+}
